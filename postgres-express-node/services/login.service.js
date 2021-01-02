@@ -1,3 +1,4 @@
+const bcrypt = require("bcriptjs");
 const config = require("../config");
 const jwt = require("jsonwebtoken");
 
@@ -27,8 +28,11 @@ class LoginService {
   
 
   this.logger.info("Checking password");
-  if(userRecord.password === password){
+  const validPassword = await bcrypt.compare(password,userRecord.password);
+  
+  if(validPassword){
     this.logger.info("Password correct");
+
     const user = {
       username: userRecord.username,
       role: userRecord.role || "guest",
@@ -41,16 +45,18 @@ class LoginService {
     const token = this.generateToken(payload);
 
     return{user,token};
+    }
+    this.logger.error("Invalid password");
+    throw new Error("Authentication failed");
+
   }
 
-  generateToken(payLoad) {
+  generateToken(payLoad){
  
     return jwt.sign(payLoad, config.jwt.secret, {
       expiresIn: config.jwt.expiresIn,
-    })
+    });
   }
 
-
-  }
 }
 module.exports = LoginService;
